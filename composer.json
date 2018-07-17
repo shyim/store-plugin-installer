@@ -1,0 +1,27 @@
+{
+  "name": "shyim/store-plugin-installer",
+  "description": "Composer plugin that installs automaticlly defined plugins from store",
+  "type": "composer-plugin",
+  "license": "MIT",
+  "require": {
+    "php": "^5.6.4 || ^7.0.0",
+    "composer-plugin-api": "^1.0.0",
+    "vlucas/phpdotenv": "~2.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Shyim\\": "src/Shyim"
+    }
+  },
+  "scripts": {
+    "post-update-cmd": "Shyim\\PluginInstaller::installPlugins",
+    "post-install-cmd": "Shyim\\PluginInstaller::installPlugins"
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "process-timeout": 0,
+    "platform": {
+      "php": "5.6.4"
+    }
+  }
+}
