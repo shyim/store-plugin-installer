@@ -2,8 +2,12 @@
 
 namespace Shyim;
 
+use Composer\Composer;
+use Composer\EventDispatcher\EventSubscriberInterface;
 use Composer\IO\IOInterface;
+use Composer\Plugin\PluginInterface;
 use Composer\Script\Event;
+use Composer\Script\ScriptEvents;
 use Dotenv\Dotenv;
 
 
@@ -11,7 +15,7 @@ use Dotenv\Dotenv;
  * Class PluginInstaller
  * @package Shopware
  */
-class PluginInstaller
+class PluginInstaller implements PluginInterface, EventSubscriberInterface
 {
     const BASE_URL = 'https://api.shopware.com';
 
@@ -29,6 +33,25 @@ class PluginInstaller
      * @var IOInterface
      */
     private static $io;
+
+    /**
+     * @return array
+     */
+    public static function getSubscribedEvents()
+    {
+        return [
+            ScriptEvents::POST_INSTALL_CMD => 'installPlugins',
+            ScriptEvents::POST_UPDATE_CMD  => 'installPlugins',
+        ];
+    }
+
+    /**
+     * We dont need activate
+     * @param Composer $composer
+     * @param IOInterface $io
+     */
+    public function activate(Composer $composer, IOInterface $io) {}
+
 
     /**
      * @param Event $e
