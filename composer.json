@@ -25,6 +25,6 @@
     }
   },
   "extra": {
-    "class": "Shyim\\PluginInstaller",
+    "class": "Shyim\\PluginInstaller"
   }
 }
