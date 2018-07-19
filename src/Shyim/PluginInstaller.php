@@ -10,7 +10,6 @@ use Composer\Script\Event;
 use Composer\Script\ScriptEvents;
 use Dotenv\Dotenv;
 
-
 /**
  * Class PluginInstaller
  * @package Shopware
@@ -52,7 +51,6 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
      */
     public function activate(Composer $composer, IOInterface $io) {}
 
-
     /**
      * @param Event $e
      * @throws \Exception
@@ -69,6 +67,9 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
     }
 
 
+    /**
+     * Read plugins from the plugins.ini from root
+     */
     private static function readPlugins()
     {
         $envFile = getcwd() . '/.env';
@@ -83,7 +84,8 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
             $env = self::getenv('SHOPWARE_ENV', 'production');
 
             if (!isset(self::$plugins[$env])) {
-                throw new \RuntimeException(sprintf('Cannot find plugins for environment "%s"', $env));
+                self::$io->write(sprintf('Cannot find plugins for environment "%s"', $env), true);
+                return;
             }
 
             self::$plugins = self::$plugins[$env];
@@ -189,6 +191,8 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
 
     /**
      * @param string $url
+     * @param string $name
+     * @param string $version
      */
     private static function downloadAndMovePlugin($url, $name, $version)
     {
@@ -204,6 +208,9 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
         self::extractPlugin($file);
     }
 
+    /**
+     * @param string $zipFile
+     */
     private static function extractPlugin($zipFile)
     {
         $zip = new \ZipArchive();
@@ -216,6 +223,11 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
         $zip->close();
     }
 
+    /**
+     * @todo: Read location from composer.json
+     * @param string $name
+     * @return string
+     */
     private static function getExtractLocation($name)
     {
         switch ($name) {
@@ -228,6 +240,9 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
         }
     }
 
+    /**
+     * Login into the shopware account
+     */
     private static function loginAccount()
     {
         $user = self::getenv('ACCOUNT_USER');
@@ -252,8 +267,8 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
     }
 
     /**
-     * @param $name
-     * @param $default
+     * @param string $name
+     * @param mixed $default
      * @return mixed
      */
     private static function getenv($name, $default = false)
