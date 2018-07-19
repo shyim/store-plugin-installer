@@ -12,11 +12,65 @@ This project is currently WIP.
 
 ## Setup
 
-Create a plugins.ini in the main folder of your installation with this schema
+Add the plugins in the extra section in your composer.json
 
-```ini
-[production]
-SwagPaymentPaypal=3.4.5
+Example composer.json
+```json
+{
+    "name": "shopware/composer-project",
+    "description": "Project template for Shopware projects with composer",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Shopware",
+            "email": "info@shopware.com"
+        }
+    ],
+    "autoload": {
+        "classmap": [ "app/AppKernel.php" ]
+    },
+    "require": {
+        "php": "^5.6.4||^7.0",
+        "composer/installers": "^1.0",
+        "shopware/shopware": "^5.4",
+        "vlucas/phpdotenv": "~2.0",
+        "shyim/store-plugin-installer": "dev-master"
+    },
+    "extra": {
+        "installer-paths": {
+            "Plugins/Local/Backend/{$name}/": ["type:shopware-backend-plugin"],
+            "Plugins/Local/Core/{$name}/": ["type:shopware-core-plugin"],
+            "Plugins/Local/Frontend/{$name}/": ["type:shopware-frontend-plugin"]
+        },
+        "plugins": {
+            "docker": {
+                "SwagPaymentPaypal": "3.4.5"
+            }
+        }
+    },
+    "include-path": [
+        "engine/Library/"
+    ],
+    "config": {
+        "optimize-autoloader": true,
+        "process-timeout": 0,
+        "platform": {
+            "php": "5.6.4"
+        }
+    },
+    "scripts": {
+        "post-root-package-install": [
+           "./app/post-install.sh"
+        ],
+        "post-install-cmd": [
+           "./app/post-install.sh"
+        ],
+        "post-update-cmd":[
+           "./app/post-update.sh"
+        ]
+    }
+}
 ```
 
 Set following environment variables
