@@ -44,7 +44,7 @@ Example composer.json
             "Plugins/Local/Frontend/{$name}/": ["type:shopware-frontend-plugin"]
         },
         "plugins": {
-            "docker": {
+            "production": {
                 "SwagPaymentPaypal": "3.4.5"
             }
         }
