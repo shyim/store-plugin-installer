@@ -59,7 +59,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
     {
         self::$io = $e->getIO();
         LocalCache::init();
-        self::readPlugins();
+        self::readPlugins($e);
 
         foreach (self::$plugins as $plugin => $version) {
             self::downloadPlugin($plugin, $version);
@@ -70,7 +70,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
     /**
      * Read plugins from the plugins.ini from root
      */
-    private static function readPlugins()
+    private static function readPlugins(Event $e)
     {
         $envFile = getcwd() . '/.env';
 
@@ -78,21 +78,20 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
             (new Dotenv(getcwd()))->load();
         }
 
-        $file = getcwd() . '/plugins.ini';
-        if (file_exists($file)) {
-            self::$plugins = parse_ini_file($file, true);
+        $extra = $e->getComposer()->getPackage()->getExtra();
+
+        if (isset($extra['plugins'])) {
             $env = self::getenv('SHOPWARE_ENV', 'production');
 
-            if (!isset(self::$plugins[$env])) {
+            if (!isset($extra['plugins'][$env])) {
                 self::$io->write(sprintf('Cannot find plugins for environment "%s"', $env), true);
                 return;
             }
 
-            self::$plugins = self::$plugins[$env];
+            self::$plugins = $extra['plugins'][$env];
         } else {
-            self::$io->write('[Installer] Cannot found a plugins.ini', true);
+            self::$io->write('[Installer] Cannot find plugins in composer.json extra', true);
         }
-
 
         self::loginAccount();
     }
