@@ -33,7 +33,7 @@ class LocalCache
 
     /**
      * @param string $name
-     * @param static $version
+     * @param string $version
      * @return string
      */
     public static function getCachePath($name, $version)
@@ -44,6 +44,7 @@ class LocalCache
     /**
      * @param string $name
      * @param string $version
+     * @return string
      */
     private static function buildPluginZipName($name, $version)
     {

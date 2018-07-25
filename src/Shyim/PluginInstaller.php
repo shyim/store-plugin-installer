@@ -34,6 +34,11 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
     private static $io;
 
     /**
+     * @var array
+     */
+    private static $extra;
+
+    /**
      * @return array
      */
     public static function getSubscribedEvents()
@@ -79,6 +84,8 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
         }
 
         $extra = $e->getComposer()->getPackage()->getExtra();
+
+        self::$extra = $extra;
 
         if (isset($extra['plugins'])) {
             $env = self::getenv('SHOPWARE_ENV', 'production');
@@ -223,12 +230,28 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
     }
 
     /**
-     * @todo: Read location from composer.json
      * @param string $name
      * @return string
      */
     private static function getExtractLocation($name)
     {
+        $paths = self::$extra['installer-paths'];
+
+        foreach ($paths as $folder => $types) {
+            $possibleValues = ['shopware-backend-plugin', 'shopware-frontend-plugin', 'shopware-core-plugin'];
+            $possibleTypes = ['Frontend', 'Core', 'Core'];
+
+            $types[0] = str_replace('type:', '', $types[0]);
+
+            if (in_array($name, $possibleTypes)) {
+                if (in_array($types[0], $possibleValues)) {
+                    return dirname(getcwd() . '/' . str_replace('{$name}/', '', $folder));
+                }
+            } elseif($types[0] === 'shopware-plugin') {
+                return dirname(getcwd() . '/' . str_replace('{$name}/', '', $folder));
+            }
+        }
+
         switch ($name) {
             case 'Frontend':
             case 'Core':
