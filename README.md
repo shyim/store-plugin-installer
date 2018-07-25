@@ -7,9 +7,6 @@ This project is currently WIP.
 * Shopware Composer Installation
 * Shopware Account Credentials
 
-## Known Problems
-* The current used api route can download only the latest version of the plugin
-
 ## Setup
 
 Add the plugins in the extra section in your composer.json

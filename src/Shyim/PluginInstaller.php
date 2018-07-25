@@ -29,6 +29,11 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
     private static $token;
 
     /**
+     * @var array
+     */
+    private static $shop;
+
+    /**
      * @var IOInterface
      */
     private static $io;
@@ -37,6 +42,11 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
      * @var array
      */
     private static $extra;
+
+    /**
+     * @var array
+     */
+    private static $licenses;
 
     /**
      * @return array
@@ -112,17 +122,26 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
      */
     private static function downloadPlugin($name, $version)
     {
-        $params = [
-            'locale' => 'en_GB',
-            'shopwareVersion' => self::getenv('SHOPWARE_VERSION', '5.4.5'),
-            'technicalNames' => $name
-        ];
+        $plugin = array_filter(self::$licenses, function ($license) use($name) {
+            // Basic Plugins like SwagCore
+            if (!isset($license['plugin'])) {
+                return false;
+            }
 
-        self::$io->write(sprintf('[Installer] Downloading plugin "%s"', $name), true);
+            return $license['plugin']['name'] === $name;
+        });
 
-        $response = self::apiRequest('/pluginStore/pluginsByName', 'GET', $params);
+        if (empty($plugin)) {
+            throw new \RuntimeException(sprintf('Plugin with name "%s" is not available in your Account. Please buy the plugin first'));
+        }
 
-        self::validateVersion($name, $version, $response);
+        $plugin = array_values($plugin)[0];
+
+        $versions = array_column($plugin['plugin']['binaries'], 'version');
+
+        if (!in_array($version, $versions)) {
+            throw new \RuntimeException(sprintf('Plugin with name "%s" doesnt have the version "%s"', $name, $version));
+        }
 
         if ($path = LocalCache::getPlugin($name, $version)) {
             self::$io->write(sprintf('[Installer] Using plugin "%s" with version %s from cache', $name, $version), true);
@@ -131,21 +150,13 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
             return;
         }
 
-        $params = [
-            'domain' => parse_url(self::getenv('SHOP_URL'), PHP_URL_HOST),
-            'technicalName' => $name,
-            'shopwareVersion' => self::getenv('SHOPWARE_VERSION', '5.4.5')
-        ];
+        $binaryVersion = array_values(array_filter($plugin['plugin']['binaries'], function ($binary) use($version) {
+            return $binary['version'] === $version;
+        }))[0];
 
-        $response = self::apiRequest('/pluginFiles/' . $name . '/data', 'GET', $params);
+        self::$io->write(sprintf('[Installer] Downloading plugin "%s" with version %s', $name, $version), true);
 
-        if (!isset($response['location'])) {
-            throw new \Exception(sprintf('Plugin Download for "%s" failed with code "%s"', $name, $response['code']));
-        }
-
-        self::$io->write(sprintf('[Installer] Downloading plugin "%s" with version %s', $name, $response['binaryVersion']), true);
-
-        self::downloadAndMovePlugin($response['location'], $name, $response['binaryVersion']);
+        self::downloadAndMovePlugin(self::BASE_URL . $binaryVersion['filePath'] . '?token=' . self::$token . '&shopId=' . self::$shop['id'], $name, $version);
     }
 
     /**
@@ -154,7 +165,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
      * @param array $params
      * @return array
      */
-    private static function apiRequest($path, $method, array $params)
+    private static function apiRequest($path, $method, array $params = [])
     {
         if ($method === 'GET') {
             $path .= '?' . http_build_query($params);
@@ -170,7 +181,8 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
 
         if (!empty(self::$token)) {
             curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                'X-Shopware-Token: ' . self::$token
+                'X-Shopware-Token: ' . self::$token,
+                'Useragent: Composer (Shopware-Store-Installer)',
             ]);
         }
 
@@ -178,21 +190,6 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
         curl_close($ch);
 
         return json_decode($response, true);
-    }
-
-    /**
-     * @param string $name
-     * @param string $version
-     * @param array $response
-     * @throws \Exception
-     */
-    private static function validateVersion($name, $version, $response)
-    {
-        $versions = array_column($response[0]['changelog'], 'version');
-
-        if (!in_array($version, $versions)) {
-            throw new \Exception(sprintf('Plugin "%s" does not have the version %s', $name, $version));
-        }
     }
 
     /**
@@ -204,6 +201,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
     {
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
         $content = curl_exec($ch);
         curl_close($ch);
 
@@ -270,6 +268,11 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
         $user = self::getenv('ACCOUNT_USER');
         $password = self::getenv('ACCOUNT_PASSWORD');
 
+        if (empty($user) || empty($password)) {
+            self::$io->writeError('[Installer] The enviroment variable $ACCOUNT_USER and $ACCOUNT_PASSWORD are required!');
+            return;
+        }
+
         if (!empty($user) && !empty($password)) {
             echo '[Installer] Using $ACCOUNT_USER and $ACCOUNT_PASSWORD to login into the account' . PHP_EOL;
 
@@ -285,6 +288,29 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
             echo '[Installer] Successfully loggedin in the account' . PHP_EOL;
 
             self::$token = $response['token'];
+
+            $shops = self::apiRequest('/shops', 'GET', [
+                'userId' => $response['userId']
+            ]);
+
+            $domains = array_column($shops, 'domain');
+            $domain = parse_url(self::getenv('SHOP_URL'), PHP_URL_HOST);
+
+            if (!in_array($domain, $domains)) {
+                throw new \RuntimeException(sprintf('Shop with given domain "%s" does not exist!', $domain));
+            }
+
+            self::$io->write(sprintf('[Installer] Found shop with domain "%s" in account', $domain), true);
+
+            self::$shop = array_filter($shops, function($shop) use($domain) {
+                return $shop['domain'] === $domain;
+            });
+
+            self::$shop = array_values(self::$shop)[0];
+
+            self::$licenses = self::apiRequest('/licenses', 'GET', [
+                'shopId' => self::$shop['id']
+            ]);
         }
     }
 
