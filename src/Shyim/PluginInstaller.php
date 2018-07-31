@@ -132,7 +132,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
         });
 
         if (empty($plugin)) {
-            throw new \RuntimeException(sprintf('Plugin with name "%s" is not available in your Account. Please buy the plugin first'));
+            throw new \RuntimeException(sprintf('Plugin with name "%s" is not available in your Account. Please buy the plugin first', $name));
         }
 
         $plugin = array_values($plugin)[0];
@@ -289,11 +289,22 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
 
             self::$token = $response['token'];
 
+            $partnerAccount = self::apiRequest('/partners/'.$response['userId'], 'GET');
+
+            if($partnerAccount && !empty($partnerAccount['partnerId'])) {
+                echo '[Installer] Account is partner account' . PHP_EOL;
+
+                $clientshops = self::apiRequest('/partners/'.$response['userId'].'/clientshops', 'GET');
+            }else{
+                $clientshops = [];
+            }
+
             $shops = self::apiRequest('/shops', 'GET', [
                 'userId' => $response['userId']
             ]);
 
-            $domains = array_column($shops, 'domain');
+            $domains = array_merge(array_column($clientshops, 'domain'), array_column($shops, 'domain'));
+
             $domain = parse_url(self::getenv('SHOP_URL'), PHP_URL_HOST);
 
             if (!in_array($domain, $domains)) {
@@ -302,6 +313,8 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
 
             self::$io->write(sprintf('[Installer] Found shop with domain "%s" in account', $domain), true);
 
+            $shops = array_merge($shops, $clientshops);
+
             self::$shop = array_filter($shops, function($shop) use($domain) {
                 return $shop['domain'] === $domain;
             });
@@ -309,6 +322,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
             self::$shop = array_values(self::$shop)[0];
 
             self::$licenses = self::apiRequest('/licenses', 'GET', [
+                'partnerId' => $response['userId'],
                 'shopId' => self::$shop['id']
             ]);
         }
