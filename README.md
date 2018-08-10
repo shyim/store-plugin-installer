@@ -1,7 +1,5 @@
 # Install plugins from Store during composer install
 
-This project is currently WIP.
-
 ## What do you need?
 
 * Shopware Composer Installation
