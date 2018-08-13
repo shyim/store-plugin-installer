@@ -271,9 +271,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
         if (empty($user) || empty($password)) {
             self::$io->writeError('[Installer] The enviroment variable $ACCOUNT_USER and $ACCOUNT_PASSWORD are required!');
             return;
-        }
-
-        if (!empty($user) && !empty($password)) {
+        } else {
             echo '[Installer] Using $ACCOUNT_USER and $ACCOUNT_PASSWORD to login into the account' . PHP_EOL;
 
             $response = self::apiRequest('/accesstokens', 'POST', [
@@ -291,11 +289,11 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
 
             $partnerAccount = self::apiRequest('/partners/'.$response['userId'], 'GET');
 
-            if($partnerAccount && !empty($partnerAccount['partnerId'])) {
+            if ($partnerAccount && !empty($partnerAccount['partnerId'])) {
                 echo '[Installer] Account is partner account' . PHP_EOL;
 
                 $clientshops = self::apiRequest('/partners/'.$response['userId'].'/clientshops', 'GET');
-            }else{
+            } else {
                 $clientshops = [];
             }
 
@@ -308,7 +306,24 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
             $domain = parse_url(self::getenv('SHOP_URL'), PHP_URL_HOST);
 
             if (!in_array($domain, $domains)) {
-                throw new \RuntimeException(sprintf('Shop with given domain "%s" does not exist!', $domain));
+                $wildCardDomains = array_filter($domains, function($domain) {
+                    return substr($domain, 0, 1) == '.';
+                });
+
+                if (!empty($wildCardDomains)) {
+                    foreach ($wildCardDomains as $wildCardDomain) {
+                        if (strpos($domain, $wildCardDomain) !== false) {
+                            $domain = $wildCardDomain;
+                            break;
+                        }
+                    }
+
+                    if (substr($domain, 0, 1) != '.') {
+                        throw new \RuntimeException(sprintf('Shop with given domain "%s" does not exist!', $domain));
+                    }
+                } else {
+                    throw new \RuntimeException(sprintf('Shop with given domain "%s" does not exist!', $domain));
+                }
             }
 
             self::$io->write(sprintf('[Installer] Found shop with domain "%s" in account', $domain), true);
