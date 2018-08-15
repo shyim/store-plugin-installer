@@ -303,23 +303,21 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
                 'userId' => $response['userId']
             ]);
 
-            $domains = array_merge(array_column($clientshops, 'domain'), array_column($shops, 'domain'));
-
             $domain = parse_url(self::getenv('SHOP_URL'), PHP_URL_HOST);
-
-            if (!in_array($domain, $domains)) {
-                throw new \RuntimeException(sprintf('Shop with given domain "%s" does not exist!', $domain));
-            }
-
-            self::$io->write(sprintf('[Installer] Found shop with domain "%s" in account', $domain), true);
 
             $shops = array_merge($shops, $clientshops);
 
             self::$shop = array_filter($shops, function($shop) use($domain) {
-                return $shop['domain'] === $domain;
+                return $shop['domain'] === $domain || (substr($shop['domain'], 0, 1) === '.' && strpos($shop['domain'], $domain) !== false);
             });
 
+            if (count(self::$shop) === 0) {
+                throw new \RuntimeException(sprintf('Shop with given domain "%s" does not exist!', $domain));
+            }
+
             self::$shop = array_values(self::$shop)[0];
+
+            self::$io->write(sprintf('[Installer] Found shop with domain "%s" in account', self::$shop['domain']), true);
 
             self::$licenses = self::apiRequest('/licenses', 'GET', [
                 'partnerId' => $response['userId'],
