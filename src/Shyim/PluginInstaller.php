@@ -319,10 +319,19 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
 
             self::$io->write(sprintf('[Installer] Found shop with domain "%s" in account', self::$shop['domain']), true);
 
-            self::$licenses = self::apiRequest('/licenses', 'GET', [
-                'partnerId' => $response['userId'],
+            $licenseParams = [
                 'shopId' => self::$shop['id']
-            ]);
+            ];
+
+            if ($partnerAccount) {
+                $licenseParams['partnerId'] = $response['userId'];
+            }
+
+            self::$licenses = self::apiRequest('/licenses', 'GET', $licenseParams);
+
+            if (isset(self::$licenses['success']) && !self::$licenses['success']) {
+                throw new \RuntimeException(sprintf('Fetching shop licenses failed with code "%s"!', self::$licenses['code']));
+            }
         }
     }
 
