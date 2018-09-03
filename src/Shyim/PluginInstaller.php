@@ -128,7 +128,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
                 return false;
             }
 
-            return $license['plugin']['name'] === $name;
+            return $license['plugin']['name'] === $name || $license['plugin']['code'] === $name;
         });
 
         if (empty($plugin)) {
@@ -137,10 +137,13 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
 
         $plugin = array_values($plugin)[0];
 
+        // Fix plugin name
+        $name = $plugin['plugin']['name'];
+
         $versions = array_column($plugin['plugin']['binaries'], 'version');
 
         if (!in_array($version, $versions)) {
-            throw new \RuntimeException(sprintf('Plugin with name "%s" doesnt have the version "%s"', $name, $version));
+            throw new \RuntimeException(sprintf('Plugin with name "%s" doesnt have the version "%s", Available versions are %s', $name, $version, implode(', ', array_reverse($versions))));
         }
 
         if ($path = LocalCache::getPlugin($name, $version)) {
