@@ -74,10 +74,11 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
     {
         self::$io = $e->getIO();
         LocalCache::init();
-        self::readPlugins($e);
 
-        foreach (self::$plugins as $plugin => $version) {
-            self::downloadPlugin($plugin, $version);
+        if (self::readPlugins($e)) {
+            foreach (self::$plugins as $plugin => $version) {
+                self::downloadPlugin($plugin, $version);
+            }
         }
     }
 
@@ -102,7 +103,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
 
             if (!isset($extra['plugins'][$env])) {
                 self::$io->write(sprintf('Cannot find plugins for environment "%s"', $env), true);
-                return;
+                return false;
             }
 
             self::$plugins = $extra['plugins'][$env];
@@ -110,7 +111,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
             self::$io->write('[Installer] Cannot find plugins in composer.json extra', true);
         }
 
-        self::loginAccount();
+        return self::loginAccount();
     }
 
     /**
@@ -236,20 +237,22 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
      */
     private static function getExtractLocation($name)
     {
-        $paths = self::$extra['installer-paths'];
+        if (isset(self::$extra['installer-paths'])) {
+            $paths = self::$extra['installer-paths'];
 
-        foreach ($paths as $folder => $types) {
-            $possibleValues = ['shopware-backend-plugin', 'shopware-frontend-plugin', 'shopware-core-plugin'];
-            $possibleTypes = ['Frontend', 'Core', 'Core'];
+            foreach ($paths as $folder => $types) {
+                $possibleValues = ['shopware-backend-plugin', 'shopware-frontend-plugin', 'shopware-core-plugin'];
+                $possibleTypes = ['Frontend', 'Core', 'Core'];
 
-            $types[0] = str_replace('type:', '', $types[0]);
+                $types[0] = str_replace('type:', '', $types[0]);
 
-            if (in_array($name, $possibleTypes)) {
-                if (in_array($types[0], $possibleValues)) {
+                if (in_array($name, $possibleTypes)) {
+                    if (in_array($types[0], $possibleValues)) {
+                        return dirname(getcwd() . '/' . str_replace('{$name}/', '', $folder));
+                    }
+                } elseif($types[0] === 'shopware-plugin') {
                     return dirname(getcwd() . '/' . str_replace('{$name}/', '', $folder));
                 }
-            } elseif($types[0] === 'shopware-plugin') {
-                return dirname(getcwd() . '/' . str_replace('{$name}/', '', $folder));
             }
         }
 
@@ -273,69 +276,69 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
 
         if (empty($user) || empty($password)) {
             self::$io->writeError('[Installer] The enviroment variable $ACCOUNT_USER and $ACCOUNT_PASSWORD are required!');
-            return;
+            return false;
         }
 
-        if (!empty($user) && !empty($password)) {
-            echo '[Installer] Using $ACCOUNT_USER and $ACCOUNT_PASSWORD to login into the account' . PHP_EOL;
+        self::$io->write('[Installer] Using $ACCOUNT_USER and $ACCOUNT_PASSWORD to login into the account', true);
 
-            $response = self::apiRequest('/accesstokens', 'POST', [
-                'shopwareId' => $user,
-                'password' => $password
-            ]);
+        $response = self::apiRequest('/accesstokens', 'POST', [
+            'shopwareId' => $user,
+            'password' => $password
+        ]);
 
-            if (isset($response['success']) && $response['success'] === false) {
-                throw new \RuntimeException(sprintf('Login to Account failed with code %s', $response['code']));
-            }
-
-            echo '[Installer] Successfully loggedin in the account' . PHP_EOL;
-
-            self::$token = $response['token'];
-
-            $partnerAccount = self::apiRequest('/partners/'.$response['userId'], 'GET');
-
-            if($partnerAccount && !empty($partnerAccount['partnerId'])) {
-                echo '[Installer] Account is partner account' . PHP_EOL;
-
-                $clientshops = self::apiRequest('/partners/'.$response['userId'].'/clientshops', 'GET');
-            }else{
-                $clientshops = [];
-            }
-
-            $shops = self::apiRequest('/shops', 'GET', [
-                'userId' => $response['userId']
-            ]);
-
-            $domain = parse_url(self::getenv('SHOP_URL'), PHP_URL_HOST);
-
-            $shops = array_merge($shops, $clientshops);
-
-            self::$shop = array_filter($shops, function($shop) use($domain) {
-                return $shop['domain'] === $domain || (substr($shop['domain'], 0, 1) === '.' && strpos($shop['domain'], $domain) !== false);
-            });
-
-            if (count(self::$shop) === 0) {
-                throw new \RuntimeException(sprintf('Shop with given domain "%s" does not exist!', $domain));
-            }
-
-            self::$shop = array_values(self::$shop)[0];
-
-            self::$io->write(sprintf('[Installer] Found shop with domain "%s" in account', self::$shop['domain']), true);
-
-            $licenseParams = [
-                'shopId' => self::$shop['id']
-            ];
-
-            if ($partnerAccount) {
-                $licenseParams['partnerId'] = $response['userId'];
-            }
-
-            self::$licenses = self::apiRequest('/licenses', 'GET', $licenseParams);
-
-            if (isset(self::$licenses['success']) && !self::$licenses['success']) {
-                throw new \RuntimeException(sprintf('Fetching shop licenses failed with code "%s"!', self::$licenses['code']));
-            }
+        if (isset($response['success']) && $response['success'] === false) {
+            throw new \RuntimeException(sprintf('Login to Account failed with code %s', $response['code']));
         }
+
+        self::$io->write('[Installer] Successfully loggedin in the account', true);
+
+        self::$token = $response['token'];
+
+        $partnerAccount = self::apiRequest('/partners/'.$response['userId'], 'GET');
+
+        if($partnerAccount && !empty($partnerAccount['partnerId'])) {
+            self::$io->write('[Installer] Account is partner account', true);
+
+            $clientshops = self::apiRequest('/partners/'.$response['userId'].'/clientshops', 'GET');
+        }else{
+            $clientshops = [];
+        }
+
+        $shops = self::apiRequest('/shops', 'GET', [
+            'userId' => $response['userId']
+        ]);
+
+        $domain = parse_url(self::getenv('SHOP_URL'), PHP_URL_HOST);
+
+        $shops = array_merge($shops, $clientshops);
+
+        self::$shop = array_filter($shops, function($shop) use($domain) {
+            return $shop['domain'] === $domain || (substr($shop['domain'], 0, 1) === '.' && strpos($shop['domain'], $domain) !== false);
+        });
+
+        if (count(self::$shop) === 0) {
+            throw new \RuntimeException(sprintf('Shop with given domain "%s" does not exist!', $domain));
+        }
+
+        self::$shop = array_values(self::$shop)[0];
+
+        self::$io->write(sprintf('[Installer] Found shop with domain "%s" in account', self::$shop['domain']), true);
+
+        $licenseParams = [
+            'shopId' => self::$shop['id']
+        ];
+
+        if ($partnerAccount) {
+            $licenseParams['partnerId'] = $response['userId'];
+        }
+
+        self::$licenses = self::apiRequest('/licenses', 'GET', $licenseParams);
+
+        if (isset(self::$licenses['success']) && !self::$licenses['success']) {
+            throw new \RuntimeException(sprintf('Fetching shop licenses failed with code "%s"!', self::$licenses['code']));
+        }
+
+        return true;
     }
 
     /**

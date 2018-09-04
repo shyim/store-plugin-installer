@@ -4,6 +4,7 @@
 
 * Shopware Composer Installation
 * Shopware Account Credentials
+* PHP 7.0 or higher
 
 ## Setup
 
