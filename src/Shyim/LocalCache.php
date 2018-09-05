@@ -2,7 +2,10 @@
 
 namespace Shyim;
 
-
+/**
+ * Class LocalCache
+ * @package Shyim
+ */
 class LocalCache
 {
     public static $path;

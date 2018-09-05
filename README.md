@@ -50,10 +50,7 @@ Example composer.json
     ],
     "config": {
         "optimize-autoloader": true,
-        "process-timeout": 0,
-        "platform": {
-            "php": "5.6.4"
-        }
+        "process-timeout": 0
     },
     "scripts": {
         "post-root-package-install": [

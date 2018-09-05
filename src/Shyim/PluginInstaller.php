@@ -99,7 +99,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
         self::$extra = $extra;
 
         if (isset($extra['plugins'])) {
-            $env = self::getenv('SHOPWARE_ENV', 'production');
+            $env = Util::getenv('SHOPWARE_ENV', 'production');
 
             if (!isset($extra['plugins'][$env])) {
                 self::$io->write(sprintf('Cannot find plugins for environment "%s"', $env), true);
@@ -271,8 +271,8 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
      */
     private static function loginAccount()
     {
-        $user = self::getenv('ACCOUNT_USER');
-        $password = self::getenv('ACCOUNT_PASSWORD');
+        $user = Util::getenv('ACCOUNT_USER');
+        $password = Util::getenv('ACCOUNT_PASSWORD');
 
         if (empty($user) || empty($password)) {
             self::$io->writeError('[Installer] The enviroment variable $ACCOUNT_USER and $ACCOUNT_PASSWORD are required!');
@@ -308,7 +308,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
             'userId' => $response['userId']
         ]);
 
-        $domain = parse_url(self::getenv('SHOP_URL'), PHP_URL_HOST);
+        $domain = parse_url(Util::getenv('SHOP_URL'), PHP_URL_HOST);
 
         $shops = array_merge($shops, $clientshops);
 
@@ -339,20 +339,5 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
         }
 
         return true;
-    }
-
-    /**
-     * @param string $name
-     * @param mixed $default
-     * @return mixed
-     */
-    private static function getenv($name, $default = false)
-    {
-        $var = getenv($name);
-        if (!$var) {
-            $var = $default;
-        }
-        
-        return $var;
     }
 }

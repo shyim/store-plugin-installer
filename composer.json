@@ -6,7 +6,10 @@
     "require": {
         "php": "^7.0.0",
         "composer-plugin-api": "^1.0.0",
-        "vlucas/phpdotenv": "~2.0"
+        "vlucas/phpdotenv": "~2.0",
+        "ext-curl": "*",
+        "ext-json": "*",
+        "ext-zip": "*"
     },
     "require-dev": {
         "composer/composer": "^1.6",
