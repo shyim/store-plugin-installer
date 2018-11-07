@@ -238,9 +238,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
     private static function getExtractLocation($name)
     {
         if (isset(self::$extra['installer-paths'])) {
-            $paths = self::$extra['installer-paths'];
-
-            foreach ($paths as $folder => $types) {
+            foreach (self::$extra['installer-paths'] as $folder => $types) {
                 $possibleValues = ['shopware-backend-plugin', 'shopware-frontend-plugin', 'shopware-core-plugin'];
                 $possibleTypes = ['Frontend', 'Core', 'Core'];
 
@@ -310,10 +308,10 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
 
         $domain = parse_url(Util::getenv('SHOP_URL'), PHP_URL_HOST);
 
-        $shops = array_merge($shops, $clientshops);
+        $shops = array_merge($shops, $clientshops, self::getWildcardDomains($response['userId']));
 
         self::$shop = array_filter($shops, function($shop) use($domain) {
-            return $shop['domain'] === $domain || (substr($shop['domain'], 0, 1) === '.' && strpos($shop['domain'], $domain) !== false);
+            return $shop['domain'] === $domain || ($shop['domain'][0] === '.' && strpos($shop['domain'], $domain) !== false);
         });
 
         if (count(self::$shop) === 0) {
@@ -324,20 +322,48 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
 
         self::$io->write(sprintf('[Installer] Found shop with domain "%s" in account', self::$shop['domain']), true);
 
-        $licenseParams = [
-            'shopId' => self::$shop['id']
-        ];
+        if (isset(self::$shop['isWildcardShop'])) {
+            throw new \RuntimeException(sprintf('[Installer] Domain "%s" is wildcard. Wildcard domains are not supported', self::$shop['domain']));
+        } else {
+            $licenseParams = [
+                'shopId' => self::$shop['id']
+            ];
 
-        if ($partnerAccount) {
-            $licenseParams['partnerId'] = $response['userId'];
-        }
+            if ($partnerAccount) {
+                $licenseParams['partnerId'] = $response['userId'];
+            }
 
-        self::$licenses = self::apiRequest('/licenses', 'GET', $licenseParams);
+            self::$licenses = self::apiRequest('/licenses', 'GET', $licenseParams);
 
-        if (isset(self::$licenses['success']) && !self::$licenses['success']) {
-            throw new \RuntimeException(sprintf('Fetching shop licenses failed with code "%s"!', self::$licenses['code']));
+            if (isset(self::$licenses['success']) && !self::$licenses['success']) {
+                throw new \RuntimeException(sprintf('Fetching shop licenses failed with code "%s"!', self::$licenses['code']));
+            }
         }
 
         return true;
+    }
+
+    /**
+     * Get wildcard domains
+     *
+     * @param int $userId
+     * @return array
+     */
+    private static function getWildcardDomains($userId)
+    {
+        $response = self::apiRequest(sprintf('/wildcardlicenses?companyId=%d', $userId), 'GET');
+
+        if (!isset($response[0]['domain'])) {
+            return [];
+        }
+
+        return array_map(function($instance) use($response) {
+            return [
+                'id' => $response[0]['id'],
+                'instanceId' => $instance['id'],
+                'domain' => $instance['name'] . '.' . $response[0]['domain'],
+                'isWildcardShop' => true
+            ];
+        }, $response[0]['instances']);
     }
 }
