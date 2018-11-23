@@ -224,7 +224,11 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
         $zip = new \ZipArchive();
         $zip->open($zipFile);
 
-        $location = self::getExtractLocation(basename($zip->statIndex(0)['name']));
+        $folderpath = str_replace("\\","/",$zip->statIndex(0)['name']);
+        $pos = strpos($folderpath, '/');
+        $path = substr($folderpath, 0, $pos);
+
+        $location = self::getExtractLocation($path);
 
         $zip->extractTo($location);
 
