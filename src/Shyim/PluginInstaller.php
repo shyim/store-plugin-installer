@@ -224,7 +224,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
         $zip = new \ZipArchive();
         $zip->open($zipFile);
 
-        $folderpath = $zip->statIndex(0)['name'];
+        $folderpath = str_replace("\\","/",$zip->statIndex(0)['name']);
         $pos = strpos($folderpath, '/');
         $path = substr($folderpath, 0, $pos);
 
@@ -244,7 +244,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
         if (isset(self::$extra['installer-paths'])) {
             foreach (self::$extra['installer-paths'] as $folder => $types) {
                 $possibleValues = ['shopware-backend-plugin', 'shopware-frontend-plugin', 'shopware-core-plugin'];
-		$possibleTypes = ['Frontend', 'Core', 'Core'];
+                $possibleTypes = ['Frontend', 'Core', 'Backend'];
 
                 $types[0] = str_replace('type:', '', $types[0]);
 
