@@ -275,6 +275,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
     {
         $user = Util::getenv('ACCOUNT_USER');
         $password = Util::getenv('ACCOUNT_PASSWORD');
+        $shopUrl = Util::getenv('SHOP_URL_ALIAS') != '' ? Util::getenv('SHOP_URL_ALIAS') : Util::getenv('SHOP_URL');
 
         if (empty($user) || empty($password)) {
             self::$io->writeError('[Installer] The enviroment variable $ACCOUNT_USER and $ACCOUNT_PASSWORD are required!');
@@ -310,7 +311,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
             'userId' => $response['userId']
         ]);
 
-        $domain = parse_url(Util::getenv('SHOP_URL'), PHP_URL_HOST);
+        $domain = parse_url($shopUrl, PHP_URL_HOST);
 
         $shops = array_merge($shops, $clientshops, self::getWildcardDomains($response['userId']));
 
