@@ -306,6 +306,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
         if (isset($response['success']) && $response['success'] === false) {
             if (self::$silentFail) {
                 self::$io->write(sprintf('[Installer] Login to Account failed with code %s', $response['code']), true);
+                return false;
             } else {
                 throw new \RuntimeException(sprintf('[Installer] Login to Account failed with code %s', $response['code']));
             }
@@ -340,6 +341,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
         if (count(self::$shop) === 0) {
             if (self::$silentFail) {
                 self::$io->write(sprintf('[Installer] Shop with given domain "%s" does not exist!', $domain), true);
+                return false;
             } else {
                 throw new \RuntimeException(sprintf('[Installer] Shop with given domain "%s" does not exist!', $domain));
             }
@@ -352,6 +354,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
         if (isset(self::$shop['isWildcardShop'])) {
             if (self::$silentFail) {
                 self::$io->write(sprintf('[Installer] Domain "%s" is wildcard. Wildcard domains are not supported', self::$shop['domain']), true);
+                return false;
             } else {
                 throw new \RuntimeException(sprintf('[Installer] Domain "%s" is wildcard. Wildcard domains are not supported', self::$shop['domain']));
             }
@@ -369,6 +372,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
             if (isset(self::$licenses['success']) && !self::$licenses['success']) {
                 if (self::$silentFail) {
                     self::$io->write(sprintf('[Installer] Fetching shop licenses failed with code "%s"!', self::$licenses['code']), true);
+                    return false;
                 } else {
                     throw new \RuntimeException(sprintf('[Installer] Fetching shop licenses failed with code "%s"!', self::$licenses['code']));
                 }
