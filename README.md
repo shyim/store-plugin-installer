@@ -70,6 +70,7 @@ Example composer.json
 Set following environment variables
    * ACCOUNT_USER (Shopware User)
    * ACCOUNT_PASSWORD (Shopware Password)
+   * SW_STORE_PLUGIN_INSTALLER_SILENTFAIL (do not throw exceptions on errors / default: `false``)
 
 Install the composer plugin
 

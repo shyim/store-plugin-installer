@@ -49,6 +49,11 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
     private static $licenses;
 
     /**
+     * @var boolean
+     */
+    private static $silentFail;
+
+    /**
      * @return array
      */
     public static function getSubscribedEvents()
@@ -94,6 +99,8 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
             (new Dotenv(getcwd()))->load();
         }
 
+        self::$silentFail = filter_var(Util::getenv('SW_STORE_PLUGIN_INSTALLER_SILENTFAIL', false), FILTER_VALIDATE_BOOLEAN);
+
         $extra = $e->getComposer()->getPackage()->getExtra();
 
         self::$extra = $extra;
@@ -133,7 +140,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
         });
 
         if (empty($plugin)) {
-            throw new \RuntimeException(sprintf('Plugin with name "%s" is not available in your Account. Please buy the plugin first', $name));
+            return $this->throwException(sprintf('[Installer] Plugin with name "%s" is not available in your Account. Please buy the plugin first', $name));
         }
 
         $plugin = array_values($plugin)[0];
@@ -144,7 +151,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
         $versions = array_column($plugin['plugin']['binaries'], 'version');
 
         if (!in_array($version, $versions)) {
-            throw new \RuntimeException(sprintf('Plugin with name "%s" doesnt have the version "%s", Available versions are %s', $name, $version, implode(', ', array_reverse($versions))));
+            return $this->throwException(sprintf('[Installer] Plugin with name "%s" doesnt have the version "%s", Available versions are %s', $name, $version, implode(', ', array_reverse($versions))));
         }
 
         if ($path = LocalCache::getPlugin($name, $version)) {
@@ -289,7 +296,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
         ]);
 
         if (isset($response['success']) && $response['success'] === false) {
-            throw new \RuntimeException(sprintf('Login to Account failed with code %s', $response['code']));
+            return $this->throwException(sprintf('[Installer] Login to Account failed with code %s', $response['code']));
         }
 
         self::$io->write('[Installer] Successfully loggedin in the account', true);
@@ -319,7 +326,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
         });
 
         if (count(self::$shop) === 0) {
-            throw new \RuntimeException(sprintf('Shop with given domain "%s" does not exist!', $domain));
+            return $this->throwException(sprintf('[Installer] Shop with given domain "%s" does not exist!', $domain));
         }
 
         self::$shop = array_values(self::$shop)[0];
@@ -327,7 +334,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
         self::$io->write(sprintf('[Installer] Found shop with domain "%s" in account', self::$shop['domain']), true);
 
         if (isset(self::$shop['isWildcardShop'])) {
-            throw new \RuntimeException(sprintf('[Installer] Domain "%s" is wildcard. Wildcard domains are not supported', self::$shop['domain']));
+            return $this->throwException(sprintf('[Installer] Domain "%s" is wildcard. Wildcard domains are not supported', self::$shop['domain']));
         } else {
             $licenseParams = [
                 'shopId' => self::$shop['id']
@@ -340,7 +347,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
             self::$licenses = self::apiRequest('/licenses', 'GET', $licenseParams);
 
             if (isset(self::$licenses['success']) && !self::$licenses['success']) {
-                throw new \RuntimeException(sprintf('Fetching shop licenses failed with code "%s"!', self::$licenses['code']));
+                return $this->throwException(sprintf('[Installer] Fetching shop licenses failed with code "%s"!', self::$licenses['code']));
             }
         }
 
@@ -369,5 +376,21 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
                 'isWildcardShop' => true
             ];
         }, $response[0]['instances']);
+    }
+
+    /**
+     * Handle exceptions and errors
+     *
+     * @param string $msg
+     * @return boolean
+     */
+    private static function throwException($msg)
+    {
+        if (self::$silentFail) {
+            self::$io->write($msg, true);
+        } else {
+            throw new \RuntimeException($msg);
+        }
+        return false;
     }
 }
