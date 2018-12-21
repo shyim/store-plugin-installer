@@ -140,7 +140,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
         });
 
         if (empty($plugin)) {
-            return $this->throwException(sprintf('[Installer] Plugin with name "%s" is not available in your Account. Please buy the plugin first', $name));
+            return self::throwException(sprintf('[Installer] Plugin with name "%s" is not available in your Account. Please buy the plugin first', $name));
         }
 
         $plugin = array_values($plugin)[0];
@@ -151,7 +151,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
         $versions = array_column($plugin['plugin']['binaries'], 'version');
 
         if (!in_array($version, $versions)) {
-            return $this->throwException(sprintf('[Installer] Plugin with name "%s" doesnt have the version "%s", Available versions are %s', $name, $version, implode(', ', array_reverse($versions))));
+            return self::throwException(sprintf('[Installer] Plugin with name "%s" doesnt have the version "%s", Available versions are %s', $name, $version, implode(', ', array_reverse($versions))));
         }
 
         if ($path = LocalCache::getPlugin($name, $version)) {
@@ -296,7 +296,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
         ]);
 
         if (isset($response['success']) && $response['success'] === false) {
-            return $this->throwException(sprintf('[Installer] Login to Account failed with code %s', $response['code']));
+            return self::throwException(sprintf('[Installer] Login to Account failed with code %s', $response['code']));
         }
 
         self::$io->write('[Installer] Successfully loggedin in the account', true);
@@ -326,7 +326,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
         });
 
         if (count(self::$shop) === 0) {
-            return $this->throwException(sprintf('[Installer] Shop with given domain "%s" does not exist!', $domain));
+            return self::throwException(sprintf('[Installer] Shop with given domain "%s" does not exist!', $domain));
         }
 
         self::$shop = array_values(self::$shop)[0];
@@ -334,7 +334,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
         self::$io->write(sprintf('[Installer] Found shop with domain "%s" in account', self::$shop['domain']), true);
 
         if (isset(self::$shop['isWildcardShop'])) {
-            return $this->throwException(sprintf('[Installer] Domain "%s" is wildcard. Wildcard domains are not supported', self::$shop['domain']));
+            return self::throwException(sprintf('[Installer] Domain "%s" is wildcard. Wildcard domains are not supported', self::$shop['domain']));
         } else {
             $licenseParams = [
                 'shopId' => self::$shop['id']
@@ -347,7 +347,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
             self::$licenses = self::apiRequest('/licenses', 'GET', $licenseParams);
 
             if (isset(self::$licenses['success']) && !self::$licenses['success']) {
-                return $this->throwException(sprintf('[Installer] Fetching shop licenses failed with code "%s"!', self::$licenses['code']));
+                return self::throwException(sprintf('[Installer] Fetching shop licenses failed with code "%s"!', self::$licenses['code']));
             }
         }
 
