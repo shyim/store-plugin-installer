@@ -96,7 +96,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
         $envFile = getcwd() . '/.env';
 
         if (file_exists($envFile)) {
-            (new Dotenv(getcwd()))->load();
+            (Dotenv::create(getcwd()))->load();
         }
 
         self::$silentFail = filter_var(Util::getenv('SW_STORE_PLUGIN_INSTALLER_SILENTFAIL', false), FILTER_VALIDATE_BOOLEAN);
