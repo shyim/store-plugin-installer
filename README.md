@@ -31,7 +31,7 @@ Example composer.json
         "php": "^5.6.4||^7.0",
         "composer/installers": "^1.0",
         "shopware/shopware": "^5.4",
-        "vlucas/phpdotenv": "~2.0",
+        "vlucas/phpdotenv": "^3.1",
         "shyim/store-plugin-installer": "dev-master"
     },
     "extra": {
