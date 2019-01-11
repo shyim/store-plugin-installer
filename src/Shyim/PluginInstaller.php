@@ -77,8 +77,9 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
      */
     public static function installPlugins(Event $e)
     {
+        LocalCache::init($e->getComposer()->getConfig()->get('cache-dir'));
+
         self::$io = $e->getIO();
-        LocalCache::init();
 
         if (self::readPlugins($e)) {
             foreach (self::$plugins as $plugin => $version) {
