@@ -65,6 +65,28 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
     }
 
     /**
+     * Download the plugin zip file.
+     *
+     * if there is no valid license the return is an json like:
+     *
+     * {"success":false,"code":"PluginsException-1"}
+     *
+     * @param string $url
+     *
+     * @return string binary of zipfile or json
+     */
+    private static function makePluginHTTPRequest($url)
+    {
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+        $content = curl_exec($ch);
+        curl_close($ch);
+
+        return $content;
+    }
+
+    /**
      * We dont need activate
      * @param Composer $composer
      * @param IOInterface $io
@@ -207,14 +229,21 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
      * @param string $url
      * @param string $name
      * @param string $version
+     *
+     * @throws \Exception
      */
     private static function downloadAndMovePlugin($url, $name, $version)
     {
-        $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-        $content = curl_exec($ch);
-        curl_close($ch);
+        $content = self::makePluginHTTPRequest($url);
+
+        if (substr($content, 0, 1) == "{" && substr($content, strlen($content) - 1, 1) == "}") {
+            $jsonMessage = json_decode($content, true);
+            if (array_key_exists('success', $jsonMessage)) {
+                if (!$jsonMessage['success']) {
+                    throw new \InvalidArgumentException(sprintf("Could not download plugin %s in version %s maybe not a valid licence for this version", $name, $version));
+                }
+            }
+        }
 
         $file = LocalCache::getCachePath($name, $version);
 
@@ -228,18 +257,19 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
      */
     private static function extractPlugin($zipFile)
     {
-        $zip = new \ZipArchive();
-        $zip->open($zipFile);
 
-        $folderpath = str_replace("\\","/",$zip->statIndex(0)['name']);
-        $pos = strpos($folderpath, '/');
-        $path = substr($folderpath, 0, $pos);
-
-        $location = self::getExtractLocation($path);
-
-        $zip->extractTo($location);
-
-        $zip->close();
+        try {
+            $zip = new \ZipArchive();
+            $zip->open($zipFile);
+            $folderpath = str_replace("\\", "/", $zip->statIndex(0)['name']);
+            $pos = strpos($folderpath, '/');
+            $path = substr($folderpath, 0, $pos);
+            $location = self::getExtractLocation($path);
+            $zip->extractTo($location);
+            $zip->close();
+        } catch (\Exception $e) {
+            throw new \Exception(sprintf("Could not extract Plugin %s", $zipFile));
+        }
     }
 
     /**
