@@ -81,6 +81,13 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
         $content = curl_exec($ch);
+
+        $info = curl_getinfo($ch);
+
+        if (isset($info['content_type']) && $info['content_type'] == "application/json") {
+           $content = json_decode($content, true);
+        }
+
         curl_close($ch);
 
         return $content;
@@ -237,10 +244,9 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
     {
         $content = self::makePluginHTTPRequest($url);
 
-        if (substr($content, 0, 1) == "{" && substr($content, strlen($content) - 1, 1) == "}") {
-            $jsonMessage = json_decode($content, true);
-            if (array_key_exists('success', $jsonMessage)) {
-                if (!$jsonMessage['success']) {
+        if (is_array($content)) {
+            if (array_key_exists('success', $content)) {
+                if (!$content['success']) {
                     throw new \InvalidArgumentException(sprintf("Could not download plugin %s in version %s maybe not a valid licence for this version", $name, $version));
                 }
             }

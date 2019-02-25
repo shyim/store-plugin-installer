@@ -113,6 +113,13 @@ class PluginInstallTest extends \PHPUnit\Framework\TestCase
         $composer->method('getPackage')
             ->willReturn($package);
 
+        $config = $this->getMockBuilder(\Composer\Config::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $composer->method('getConfig')
+            ->willReturn($config);
+
         $event = $this->getMockBuilder(\Composer\Script\Event::class)
             ->disableOriginalConstructor()
             ->getMock();
