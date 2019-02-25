@@ -26,10 +26,6 @@ class LocalCacheTest extends TestCase
         $this->root = vfsStream::setUp("cache");
     }
 
-
-    /**
-     *
-     */
     public function testGetPlugin()
     {
         $this->initCacheWithPlugin();
@@ -39,9 +35,6 @@ class LocalCacheTest extends TestCase
         $this->assertEquals(vfsStream::url("cache/.shopware-plugins/SwagDigitalPublishing-3.3.0.zip"), LocalCache::getPlugin("SwagDigitalPublishing", "3.3.0"));
     }
 
-    /**
-     *
-     */
     public function testCleanByPath()
     {
         $this->initCacheWithPlugin();
@@ -51,18 +44,12 @@ class LocalCacheTest extends TestCase
         $this->assertFileNotExists($fName);
     }
 
-    /**
-     *
-     */
     public function testInitCrateCacheDirectory()
     {
         LocalCache::init(vfsStream::url("cache"));
         $this->assertDirectoryExists(vfsStream::url("cache/.shopware-plugins"));
     }
 
-    /**
-     *
-     */
     public function testGetCachePath()
     {
         LocalCache::init(vfsStream::url("cache"));
