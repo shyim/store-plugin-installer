@@ -269,6 +269,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
             $zip->extractTo($location);
             $zip->close();
         } catch (\Exception $e) {
+            LocalCache::cleanByPath($zipFile);
             throw new \Exception(sprintf("Could not extract Plugin %s", $zipFile));
         }
     }
