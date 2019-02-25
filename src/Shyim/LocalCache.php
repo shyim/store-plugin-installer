@@ -10,12 +10,18 @@ class LocalCache
 {
     public static $path;
 
-    public static function init()
+    public static function init($path = null)
     {
-        self::$path = getenv('HOME') . '/.shopware-plugins/';
+        if ($path === null) {
+            self::$path = getenv('HOME') . '/.shopware-plugins/';
+        } else {
+            self::$path = rtrim($path, '/') . '/.shopware-plugins/';
+        }
 
         if (!file_exists(self::$path)) {
-            mkdir(self::$path);
+            if (!mkdir($concurrentDirectory = self::$path) && !is_dir($concurrentDirectory)) {
+                throw new \RuntimeException(sprintf('Directory "%s" was not created', $concurrentDirectory));
+            }
         }
     }
 
