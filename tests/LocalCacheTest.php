@@ -1,13 +1,5 @@
 <?php
-/**
- * Created by PhpStorm.
- * @author: Sebastian Förster <foerster@forestsoft.de>
- * Date: 25.02.2019
- * Time: 21:21
- */
-
 namespace Shyim;
-
 
 use org\bovigo\vfs\vfsStream;
 use org\bovigo\vfs\vfsStreamDirectory;
