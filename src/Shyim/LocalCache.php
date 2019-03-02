@@ -41,6 +41,18 @@ class LocalCache
     }
 
     /**
+     * Clean cachedata by a filename.
+     *
+     * @param string $filename
+     */
+    public static function cleanByPath($filename)
+    {
+        if (file_exists($filename)) {
+            unlink($filename);
+        }
+    }
+
+    /**
      * @param string $name
      * @param string $version
      * @return string
