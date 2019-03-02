@@ -14,7 +14,7 @@
     "require-dev": {
         "composer/composer": "^1.6",
         "phpunit/phpunit": "^6",
-        "mikey179/vfsStream": "^2.0@dev"
+        "mikey179/vfsstream": "^2.0@dev"
     },
     "autoload": {
         "psr-4": {
