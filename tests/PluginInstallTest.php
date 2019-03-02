@@ -1,8 +1,9 @@
 <?php
 
+use PHPUnit\Framework\TestCase;
 use Shyim\PluginInstaller;
 
-class PluginInstallTest extends \PHPUnit\Framework\TestCase
+class PluginInstallTest extends TestCase
 {
     /**
      * @var \Composer\IO\BufferIO
@@ -19,9 +20,6 @@ class PluginInstallTest extends \PHPUnit\Framework\TestCase
         $this->testHost = parse_url(getenv('SHOP_URL'), PHP_URL_HOST);
     }
 
-    /**
-     * @throws Exception
-     */
     public function testInstallSinglePlugin()
     {
         $event = $this->getMockedEvent([
@@ -41,9 +39,6 @@ class PluginInstallTest extends \PHPUnit\Framework\TestCase
         $this->assertFileExists('./custom/plugins/SwagLiveShopping');
     }
 
-    /**
-     * @throws Exception
-     */
     public function testInstallMultiplePlugin()
     {
         $event = $this->getMockedEvent([
@@ -68,9 +63,6 @@ class PluginInstallTest extends \PHPUnit\Framework\TestCase
         $this->assertFileExists('./custom/plugins/SwagTicketSystem');
     }
 
-    /**
-     * @throws Exception
-     */
     public function testInstallByCode()
     {
         $event = $this->getMockedEvent([
@@ -88,6 +80,22 @@ class PluginInstallTest extends \PHPUnit\Framework\TestCase
         $this->assertContains('SwagDigitalPublishing', $this->output->getOutput());
         $this->assertContains('3.3.0', $this->output->getOutput());
         $this->assertFileExists('./custom/plugins/SwagDigitalPublishing');
+    }
+
+    public function testInstallPluginWithLeftTrialVersion()
+    {
+        $event = $this->getMockedEvent([
+            'plugins' => [
+                'production' => [
+                    'NetiStoreLocator' => '5.3.0',
+                ]
+            ]
+        ]);
+
+        PluginInstaller::installPlugins($event);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Could not download plugin NetiStoreLocator in version 5.3.0 maybe not a valid licence for this version');
     }
 
     /**
