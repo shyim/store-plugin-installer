@@ -25,9 +25,9 @@ class PluginInstallTest extends TestCase
         $event = $this->getMockedEvent([
             'plugins' => [
                 'production' => [
-                    'SwagLiveshopping' => '3.2.0'
-                ]
-            ]
+                    'SwagLiveshopping' => '3.2.0',
+                ],
+            ],
         ]);
 
         PluginInstaller::installPlugins($event);
@@ -45,9 +45,9 @@ class PluginInstallTest extends TestCase
             'plugins' => [
                 'production' => [
                     'SwagLiveshopping' => '3.2.0',
-                    'SwagTicketSystem' => '2.2.0'
-                ]
-            ]
+                    'SwagTicketSystem' => '2.2.0',
+                ],
+            ],
         ]);
 
         PluginInstaller::installPlugins($event);
@@ -69,8 +69,8 @@ class PluginInstallTest extends TestCase
             'plugins' => [
                 'production' => [
                     'Swag369885808847' => '3.3.0',
-                ]
-            ]
+                ],
+            ],
         ]);
 
         PluginInstaller::installPlugins($event);
@@ -88,8 +88,8 @@ class PluginInstallTest extends TestCase
             'plugins' => [
                 'production' => [
                     'NetiStoreLocator' => '5.3.0',
-                ]
-            ]
+                ],
+            ],
         ]);
 
         $this->expectException(InvalidArgumentException::class);
@@ -103,9 +103,9 @@ class PluginInstallTest extends TestCase
         $event = $this->getMockedEvent([
             'plugins' => [
                 'production' => [
-                    'SwagLiveshopping' => '^3'
-                ]
-            ]
+                    'SwagLiveshopping' => '^3',
+                ],
+            ],
         ]);
 
         PluginInstaller::installPlugins($event);
@@ -119,6 +119,7 @@ class PluginInstallTest extends TestCase
 
     /**
      * @param array $data
+     *
      * @return \PHPUnit\Framework\MockObject\MockObject
      */
     private function getMockedEvent(array $data)
@@ -128,7 +129,6 @@ class PluginInstallTest extends TestCase
         $package = $this->getMockBuilder(\Composer\Package\RootPackage::class)
             ->disableOriginalConstructor()
             ->getMock();
-
 
         $package->method('getExtra')
             ->willReturn($data);

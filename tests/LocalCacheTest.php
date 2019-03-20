@@ -1,4 +1,5 @@
 <?php
+
 namespace Shyim;
 
 use org\bovigo\vfs\vfsStream;
@@ -15,22 +16,22 @@ class LocalCacheTest extends TestCase
     protected function setUp()
     {
         parent::setUp();
-        $this->root = vfsStream::setUp("cache");
+        $this->root = vfsStream::setUp('cache');
     }
 
     public function testGetPlugin()
     {
         $this->initCacheWithPlugin();
 
-        LocalCache::init(vfsStream::url("cache"));
+        LocalCache::init(vfsStream::url('cache'));
 
-        $this->assertEquals(vfsStream::url("cache/.shopware-plugins/SwagDigitalPublishing-3.3.0.zip"), LocalCache::getPlugin("SwagDigitalPublishing", "3.3.0"));
+        $this->assertEquals(vfsStream::url('cache/.shopware-plugins/SwagDigitalPublishing-3.3.0.zip'), LocalCache::getPlugin('SwagDigitalPublishing', '3.3.0'));
     }
 
     public function testCleanByPath()
     {
         $this->initCacheWithPlugin();
-        $fName = vfsStream::url("cache/.shopware-plugins/SwagDigitalPublishing-3.3.0.zip");
+        $fName = vfsStream::url('cache/.shopware-plugins/SwagDigitalPublishing-3.3.0.zip');
         LocalCache::cleanByPath($fName);
 
         $this->assertFileNotExists($fName);
@@ -38,19 +39,19 @@ class LocalCacheTest extends TestCase
 
     public function testInitCrateCacheDirectory()
     {
-        LocalCache::init(vfsStream::url("cache"));
-        $this->assertDirectoryExists(vfsStream::url("cache/.shopware-plugins"));
+        LocalCache::init(vfsStream::url('cache'));
+        $this->assertDirectoryExists(vfsStream::url('cache/.shopware-plugins'));
     }
 
     public function testGetCachePath()
     {
-        LocalCache::init(vfsStream::url("cache"));
-        $this->assertEquals(vfsStream::url("cache/.shopware-plugins/SwagDigitalPublishing-3.3.0.zip"), LocalCache::getCachePath("SwagDigitalPublishing", "3.3.0"));
+        LocalCache::init(vfsStream::url('cache'));
+        $this->assertEquals(vfsStream::url('cache/.shopware-plugins/SwagDigitalPublishing-3.3.0.zip'), LocalCache::getCachePath('SwagDigitalPublishing', '3.3.0'));
     }
 
     private function initCacheWithPlugin()
     {
-        $plugins = vfsStream::newDirectory(".shopware-plugins", 0777)->at($this->root);
-        vfsStream::newFile("SwagDigitalPublishing-3.3.0.zip",0777)->at($plugins);
+        $plugins = vfsStream::newDirectory('.shopware-plugins', 0777)->at($this->root);
+        vfsStream::newFile('SwagDigitalPublishing-3.3.0.zip', 0777)->at($plugins);
     }
 }

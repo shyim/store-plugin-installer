@@ -12,7 +12,6 @@ use Dotenv\Dotenv;
 
 /**
  * Class PluginInstaller
- * @package Shopware
  */
 class PluginInstaller implements PluginInterface, EventSubscriberInterface
 {
@@ -49,7 +48,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
     private static $licenses;
 
     /**
-     * @var boolean
+     * @var bool
      */
     private static $silentFail;
 
@@ -60,8 +59,36 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
     {
         return [
             ScriptEvents::POST_INSTALL_CMD => 'installPlugins',
-            ScriptEvents::POST_UPDATE_CMD  => 'installPlugins',
+            ScriptEvents::POST_UPDATE_CMD => 'installPlugins',
         ];
+    }
+
+    /**
+     * We dont need activate
+     *
+     * @param Composer    $composer
+     * @param IOInterface $io
+     */
+    public function activate(Composer $composer, IOInterface $io)
+    {
+    }
+
+    /**
+     * @param Event $e
+     *
+     * @throws \Exception
+     */
+    public static function installPlugins(Event $e)
+    {
+        LocalCache::init($e->getComposer()->getConfig()->get('cache-dir'));
+
+        self::$io = $e->getIO();
+
+        if (self::readPlugins($e)) {
+            foreach (self::$plugins as $plugin => $version) {
+                self::downloadPlugin($plugin, $version);
+            }
+        }
     }
 
     /**
@@ -84,39 +111,14 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
 
         $info = curl_getinfo($ch);
 
-        if (isset($info['content_type']) && $info['content_type'] == "application/json") {
-           $content = json_decode($content, true);
+        if (isset($info['content_type']) && $info['content_type'] == 'application/json') {
+            $content = json_decode($content, true);
         }
 
         curl_close($ch);
 
         return $content;
     }
-
-    /**
-     * We dont need activate
-     * @param Composer $composer
-     * @param IOInterface $io
-     */
-    public function activate(Composer $composer, IOInterface $io) {}
-
-    /**
-     * @param Event $e
-     * @throws \Exception
-     */
-    public static function installPlugins(Event $e)
-    {
-        LocalCache::init($e->getComposer()->getConfig()->get('cache-dir'));
-
-        self::$io = $e->getIO();
-
-        if (self::readPlugins($e)) {
-            foreach (self::$plugins as $plugin => $version) {
-                self::downloadPlugin($plugin, $version);
-            }
-        }
-    }
-
 
     /**
      * Read plugins from the plugins.ini from root
@@ -144,6 +146,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
 
             if (!isset($extra['plugins'][$env])) {
                 self::$io->write(sprintf('Cannot find plugins for environment "%s"', $env), true);
+
                 return false;
             }
 
@@ -160,11 +163,12 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
      *
      * @param string $name
      * @param string $version
+     *
      * @throws \Exception
      */
     private static function downloadPlugin($name, $version)
     {
-        $plugin = array_filter(self::$licenses, function ($license) use($name) {
+        $plugin = array_filter(self::$licenses, function ($license) use ($name) {
             // Basic Plugins like SwagCore
             if (!isset($license['plugin'])) {
                 return false;
@@ -194,10 +198,11 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
             self::$io->write(sprintf('[Installer] Using plugin "%s" with version %s from cache', $name, $version), true);
 
             self::extractPlugin($path);
+
             return;
         }
 
-        $binaryVersion = array_values(array_filter($plugin['plugin']['binaries'], function ($binary) use($version) {
+        $binaryVersion = array_values(array_filter($plugin['plugin']['binaries'], function ($binary) use ($version) {
             return $binary['version'] === $version;
         }))[0];
 
@@ -209,7 +214,8 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
     /**
      * @param string $path
      * @param string $method
-     * @param array $params
+     * @param array  $params
+     *
      * @return array
      */
     private static function apiRequest($path, $method, array $params = [])
@@ -253,7 +259,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
         if (is_array($content)) {
             if (array_key_exists('success', $content)) {
                 if (!$content['success']) {
-                    throw new \InvalidArgumentException(sprintf("Could not download plugin %s in version %s maybe not a valid licence for this version", $name, $version));
+                    throw new \InvalidArgumentException(sprintf('Could not download plugin %s in version %s maybe not a valid licence for this version', $name, $version));
                 }
             }
         }
@@ -270,11 +276,10 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
      */
     private static function extractPlugin($zipFile)
     {
-
         try {
             $zip = new \ZipArchive();
             $zip->open($zipFile);
-            $folderpath = str_replace("\\", "/", $zip->statIndex(0)['name']);
+            $folderpath = str_replace('\\', '/', $zip->statIndex(0)['name']);
             $pos = strpos($folderpath, '/');
             $path = substr($folderpath, 0, $pos);
             $location = self::getExtractLocation($path);
@@ -282,12 +287,13 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
             $zip->close();
         } catch (\Exception $e) {
             LocalCache::cleanByPath($zipFile);
-            self::throwException(sprintf("Could not extract Plugin %s", $zipFile));
+            self::throwException(sprintf('Could not extract Plugin %s', $zipFile));
         }
     }
 
     /**
      * @param string $name
+     *
      * @return string
      */
     private static function getExtractLocation($name)
@@ -303,7 +309,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
                     if (in_array($types[0], $possibleValues)) {
                         return dirname(getcwd() . '/' . str_replace('{$name}/', '', $folder));
                     }
-                } elseif($types[0] === 'shopware-plugin') {
+                } elseif ($types[0] === 'shopware-plugin') {
                     return dirname(getcwd() . '/' . str_replace('{$name}/', '', $folder));
                 }
             }
@@ -329,6 +335,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
 
         if (empty($user) || empty($password)) {
             self::$io->writeError('[Installer] The enviroment variable $ACCOUNT_USER and $ACCOUNT_PASSWORD are required!');
+
             return false;
         }
 
@@ -336,7 +343,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
 
         $response = self::apiRequest('/accesstokens', 'POST', [
             'shopwareId' => $user,
-            'password' => $password
+            'password' => $password,
         ]);
 
         if (isset($response['success']) && $response['success'] === false) {
@@ -347,25 +354,25 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
 
         self::$token = $response['token'];
 
-        $partnerAccount = self::apiRequest('/partners/'.$response['userId'], 'GET');
+        $partnerAccount = self::apiRequest('/partners/' . $response['userId'], 'GET');
 
-        if($partnerAccount && !empty($partnerAccount['partnerId'])) {
+        if ($partnerAccount && !empty($partnerAccount['partnerId'])) {
             self::$io->write('[Installer] Account is partner account', true);
 
-            $clientshops = self::apiRequest('/partners/'.$response['userId'].'/clientshops', 'GET');
-        }else{
+            $clientshops = self::apiRequest('/partners/' . $response['userId'] . '/clientshops', 'GET');
+        } else {
             $clientshops = [];
         }
 
         $shops = self::apiRequest('/shops', 'GET', [
-            'userId' => $response['userId']
+            'userId' => $response['userId'],
         ]);
 
         $domain = parse_url(Util::getenv('SHOP_URL'), PHP_URL_HOST);
 
         $shops = array_merge($shops, $clientshops, self::getWildcardDomains($response['userId']));
 
-        self::$shop = array_filter($shops, function($shop) use($domain) {
+        self::$shop = array_filter($shops, function ($shop) use ($domain) {
             return $shop['domain'] === $domain || ($shop['domain'][0] === '.' && strpos($shop['domain'], $domain) !== false);
         });
 
@@ -379,20 +386,19 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
 
         if (isset(self::$shop['isWildcardShop'])) {
             return self::throwException(sprintf('[Installer] Domain "%s" is wildcard. Wildcard domains are not supported', self::$shop['domain']));
-        } else {
-            $licenseParams = [
-                'shopId' => self::$shop['id']
+        }
+        $licenseParams = [
+                'shopId' => self::$shop['id'],
             ];
 
-            if ($partnerAccount) {
-                $licenseParams['partnerId'] = $response['userId'];
-            }
+        if ($partnerAccount) {
+            $licenseParams['partnerId'] = $response['userId'];
+        }
 
-            self::$licenses = self::apiRequest('/licenses', 'GET', $licenseParams);
+        self::$licenses = self::apiRequest('/licenses', 'GET', $licenseParams);
 
-            if (isset(self::$licenses['success']) && !self::$licenses['success']) {
-                return self::throwException(sprintf('[Installer] Fetching shop licenses failed with code "%s"!', self::$licenses['code']));
-            }
+        if (isset(self::$licenses['success']) && !self::$licenses['success']) {
+            return self::throwException(sprintf('[Installer] Fetching shop licenses failed with code "%s"!', self::$licenses['code']));
         }
 
         return true;
@@ -402,6 +408,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
      * Get wildcard domains
      *
      * @param int $userId
+     *
      * @return array
      */
     private static function getWildcardDomains($userId)
@@ -412,12 +419,12 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
             return [];
         }
 
-        return array_map(function($instance) use($response) {
+        return array_map(function ($instance) use ($response) {
             return [
                 'id' => $response[0]['id'],
                 'instanceId' => $instance['id'],
                 'domain' => $instance['name'] . '.' . $response[0]['domain'],
-                'isWildcardShop' => true
+                'isWildcardShop' => true,
             ];
         }, $response[0]['instances']);
     }
@@ -426,7 +433,8 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
      * Handle exceptions and errors
      *
      * @param string $msg
-     * @return boolean
+     *
+     * @return bool
      */
     private static function throwException($msg)
     {
@@ -435,6 +443,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
         } else {
             throw new \RuntimeException($msg);
         }
+
         return false;
     }
 }

@@ -4,7 +4,6 @@ namespace Shyim;
 
 /**
  * Class Util
- * @package Shyim
  */
 class Util
 {
@@ -13,7 +12,7 @@ class Util
     /**
      * @return string
      */
-    public static function getShopwareVersion() : string
+    public static function getShopwareVersion(): string
     {
         $version = self::getenv('SHOPWARE_VERSION', self::getComposerVersion());
 
@@ -30,7 +29,8 @@ class Util
 
     /**
      * @param string $name
-     * @param mixed $default
+     * @param mixed  $default
+     *
      * @return mixed
      */
     public static function getenv($name, $default = false)
@@ -56,5 +56,4 @@ class Util
 
         return $version;
     }
-
 }

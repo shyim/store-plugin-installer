@@ -2,3 +2,4 @@
 vendor
 composer.lock
 custom/
+.php_cs.cache
