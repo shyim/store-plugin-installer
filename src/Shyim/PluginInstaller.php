@@ -3,6 +3,9 @@
 namespace Shyim;
 
 use Shyim\Api\Client;
+use Shyim\Struct\License\Binaries;
+use Shyim\Struct\License\License;
+use Shyim\Struct\License\Plugin;
 
 class PluginInstaller
 {
@@ -17,7 +20,7 @@ class PluginInstaller
     private $extra;
 
     /**
-     * @var array
+     * @var License[]
      */
     private $licenses;
 
@@ -30,25 +33,28 @@ class PluginInstaller
 
     public function installPlugin(string $name, string $version)
     {
-        $plugin = array_filter($this->licenses, function ($license) use ($name) {
+        $license = array_filter($this->licenses, function (License $license) use ($name) {
             // Basic Plugins like SwagCore
-            if (!isset($license['plugin'])) {
+            if (!isset($license->plugin)) {
                 return false;
             }
 
-            return $license['plugin']['name'] === $name || $license['plugin']['code'] === $name;
+            return $license->plugin->name === $name || $license->plugin->code === $name;
         });
 
-        if (empty($plugin)) {
+        if (empty($license)) {
             throw new \RuntimeException(sprintf('[Installer] Plugin with name "%s" is not available in your Account. Please buy the plugin first', $name));
         }
 
-        $plugin = array_values($plugin)[0];
+        /** @var License $license */
+        $license = array_values($license)[0];
 
         // Fix plugin name
-        $name = $plugin['plugin']['name'];
+        $name = $license->plugin->name;
 
-        $versions = array_column($plugin['plugin']['binaries'], 'version');
+        $versions = array_map(function (Binaries $binary) {
+            return $binary->version;
+        }, $license->plugin->binaries);
 
         $version = VersionSelector::getVersion($name, $version, $versions);
 
@@ -64,8 +70,8 @@ class PluginInstaller
             return;
         }
 
-        $binaryVersion = array_values(array_filter($plugin['plugin']['binaries'], function ($binary) use ($version) {
-            return $binary['version'] === $version;
+        $binaryVersion = array_values(array_filter($license->plugin->binaries, function (Binaries $binary) use ($version) {
+            return $binary->version === $version;
         }))[0];
 
         ComposerPlugin::$io->write(sprintf('[Installer] Downloading plugin "%s" with version %s', $name, $version), true);

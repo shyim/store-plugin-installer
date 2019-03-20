@@ -3,6 +3,9 @@
 namespace Shyim\Api;
 
 use Shyim\ComposerPlugin;
+use Shyim\Struct\License\Binaries;
+use Shyim\Struct\License\License;
+use Shyim\Struct\Shop\Shop;
 
 class Client
 {
@@ -19,12 +22,12 @@ class Client
     private $userId;
 
     /**
-     * @var array
+     * @var Shop
      */
     private $shop;
 
     /**
-     * @var array
+     * @var License[]
      */
     private $licenses;
 
@@ -52,14 +55,17 @@ class Client
         return $this->apiRequest('/partners/' . $this->userId, 'GET');
     }
 
+    /**
+     * @return License[]
+     */
     public function getLicenses()
     {
         return $this->licenses;
     }
 
-    public function downloadPlugin(array $binaryVersion)
+    public function downloadPlugin(Binaries $binaryVersion)
     {
-        return $this->makePluginHTTPRequest(self::BASE_URL . $binaryVersion['filePath'] . '?token=' . $this->token . '&shopId=' . $this->shop['id']);
+        return $this->makePluginHTTPRequest(self::BASE_URL . $binaryVersion->filePath . '?token=' . $this->token . '&shopId=' . $this->shop->id);
     }
 
     /**
@@ -98,19 +104,19 @@ class Client
         if ($partnerAccount && !empty($partnerAccount['partnerId'])) {
             ComposerPlugin::$io->write('[Installer] Account is partner account', true);
 
-            $clientShops = self::apiRequest('/partners/' . $this->userId . '/clientshops', 'GET');
+            $clientShops = Shop::mapList(self::apiRequest('/partners/' . $this->userId . '/clientshops', 'GET', [], false));
         } else {
             $clientShops = [];
         }
 
-        $shops = $this->apiRequest('/shops', 'GET', [
+        $shops = Shop::mapList($this->apiRequest('/shops', 'GET', [
             'userId' => $this->userId,
-        ]);
+        ], false));
 
-        $shops = array_merge($shops, $clientShops, self::getWildcardDomains($this->userId));
+        $shops = array_merge($shops, $clientShops);
 
-        $this->shop = array_filter($shops, function ($shop) use ($domain) {
-            return $shop['domain'] === $domain || ($shop['domain'][0] === '.' && strpos($shop['domain'], $domain) !== false);
+        $this->shop = array_filter($shops, function (Shop $shop) use ($domain) {
+            return $shop->domain === $domain || ($shop->domain[0] === '.' && strpos($shop->domain, $domain) !== false);
         });
 
         if (count($this->shop) === 0) {
@@ -119,35 +125,29 @@ class Client
 
         $this->shop = array_values($this->shop)[0];
 
-        ComposerPlugin::$io->write(sprintf('[Installer] Found shop with domain "%s" in account', $this->shop['domain']), true);
-
-        if (isset($this->shop['isWildcardShop'])) {
-            throw new \RuntimeException((sprintf('[Installer] Domain "%s" is wildcard. Wildcard domains are not supported', $this->shop['domain'])));
-        }
+        ComposerPlugin::$io->write(sprintf('[Installer] Found shop with domain "%s" in account', $this->shop->domain), true);
 
         $licenseParams = [
-            'shopId' => $this->shop['id'],
+            'shopId' => $this->shop->id,
         ];
 
         if ($partnerAccount) {
             $licenseParams['partnerId'] = $this->userId;
         }
 
-        $this->licenses = self::apiRequest('/licenses', 'GET', $licenseParams);
+        $licenses = self::apiRequest('/licenses', 'GET', $licenseParams, false);
 
-        if (isset($this->licenses['success']) && !$this->licenses['success']) {
-            throw new \RuntimeException(sprintf('[Installer] Fetching shop licenses failed with code "%s"!', $this->licenses['code']));
+        if (isset($licenses->success) && !$licenses->success) {
+            throw new \RuntimeException(sprintf('[Installer] Fetching shop licenses failed with code "%s"!', $licenses->code));
         }
+
+        $this->licenses = License::mapList($licenses);
     }
 
     /**
-     * @param string $path
-     * @param string $method
-     * @param array  $params
-     *
      * @return array
      */
-    private function apiRequest($path, $method, array $params = [])
+    private function apiRequest(string $path, string $method, array $params = [], bool $assoc = true)
     {
         if ($method === 'GET') {
             $path .= '?' . http_build_query($params);
@@ -171,31 +171,6 @@ class Client
         $response = curl_exec($ch);
         curl_close($ch);
 
-        return json_decode($response, true);
-    }
-
-    /**
-     * Get wildcard domains
-     *
-     * @param int $userId
-     *
-     * @return array
-     */
-    private function getWildcardDomains(int $userId)
-    {
-        $response = $this->apiRequest(sprintf('/wildcardlicenses?companyId=%d', $userId), 'GET');
-
-        if (!isset($response[0]['domain'])) {
-            return [];
-        }
-
-        return array_map(function ($instance) use ($response) {
-            return [
-                'id' => $response[0]['id'],
-                'instanceId' => $instance['id'],
-                'domain' => $instance['name'] . '.' . $response[0]['domain'],
-                'isWildcardShop' => true,
-            ];
-        }, $response[0]['instances']);
+        return json_decode($response, $assoc);
     }
 }
