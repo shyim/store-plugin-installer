@@ -22,8 +22,8 @@
         }
     },
     "scripts": {
-        "post-update-cmd": "Shyim\\PluginInstaller::installPlugins",
-        "post-install-cmd": "Shyim\\PluginInstaller::installPlugins"
+        "post-update-cmd": "Shyim\\ComposerPlugin::installPlugins",
+        "post-install-cmd": "Shyim\\ComposerPlugin::installPlugins"
     },
     "config": {
         "optimize-autoloader": true,

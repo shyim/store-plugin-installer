@@ -1,7 +1,7 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
-use Shyim\PluginInstaller;
+use Shyim\ComposerPlugin;
 
 class PluginInstallTest extends TestCase
 {
@@ -30,7 +30,7 @@ class PluginInstallTest extends TestCase
             ],
         ]);
 
-        PluginInstaller::installPlugins($event);
+        ComposerPlugin::installPlugins($event);
 
         $this->assertContains('Successfully loggedin in the account', $this->output->getOutput());
         $this->assertContains($this->testHost, $this->output->getOutput());
@@ -50,7 +50,7 @@ class PluginInstallTest extends TestCase
             ],
         ]);
 
-        PluginInstaller::installPlugins($event);
+        ComposerPlugin::installPlugins($event);
 
         $this->assertContains('Successfully loggedin in the account', $this->output->getOutput());
         $this->assertContains($this->testHost, $this->output->getOutput());
@@ -73,7 +73,7 @@ class PluginInstallTest extends TestCase
             ],
         ]);
 
-        PluginInstaller::installPlugins($event);
+        ComposerPlugin::installPlugins($event);
 
         $this->assertContains('Successfully loggedin in the account', $this->output->getOutput());
         $this->assertContains($this->testHost, $this->output->getOutput());
@@ -95,7 +95,7 @@ class PluginInstallTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Could not download plugin NetiStoreLocator in version 5.3.0 maybe not a valid licence for this version');
 
-        PluginInstaller::installPlugins($event);
+        ComposerPlugin::installPlugins($event);
     }
 
     public function testInstallWithConstraint()
@@ -108,7 +108,7 @@ class PluginInstallTest extends TestCase
             ],
         ]);
 
-        PluginInstaller::installPlugins($event);
+        ComposerPlugin::installPlugins($event);
 
         $this->assertContains('Successfully loggedin in the account', $this->output->getOutput());
         $this->assertContains($this->testHost, $this->output->getOutput());
