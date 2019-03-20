@@ -26,6 +26,11 @@ abstract class Struct
                     }
                     $newObject->$key = $data;
                 } else {
+                    if (is_array($value)) {
+                        $newObject->$key = $value;
+                        continue;
+                    }
+
                     $newObject->$key = static::$mappedFields[$key]::map($value);
                 }
                 continue;

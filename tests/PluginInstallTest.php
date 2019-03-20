@@ -117,6 +117,21 @@ class PluginInstallTest extends TestCase
         $this->assertFileExists('./custom/plugins/SwagLiveShopping');
     }
 
+    public function testDidYouMean()
+    {
+        $event = $this->getMockedEvent([
+            'plugins' => [
+                'production' => [
+                    'paypal' => '^3',
+                ],
+            ],
+        ]);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessageRegExp('#Did you mean some#');
+        ComposerPlugin::installPlugins($event);
+    }
+
     /**
      * @param array $data
      *

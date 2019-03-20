@@ -5,6 +5,7 @@ namespace Shyim\Api;
 use Shyim\ComposerPlugin;
 use Shyim\Struct\License\Binaries;
 use Shyim\Struct\License\License;
+use Shyim\Struct\Plugin\Plugin;
 use Shyim\Struct\Shop\Shop;
 
 class Client
@@ -58,7 +59,7 @@ class Client
     /**
      * @return License[]
      */
-    public function getLicenses()
+    public function getLicenses(): array
     {
         return $this->licenses;
     }
@@ -66,6 +67,34 @@ class Client
     public function downloadPlugin(Binaries $binaryVersion)
     {
         return $this->makePluginHTTPRequest(self::BASE_URL . $binaryVersion->filePath . '?token=' . $this->token . '&shopId=' . $this->shop->id);
+    }
+
+    /**
+     * @return Plugin[]
+     */
+    public function searchPlugin(string $name)
+    {
+        $storeRequest = $this->apiRequest('/pluginStore/plugins', 'GET', [
+            'locale' => 'en_GB',
+            'shopwareVersion' => '__VERSION__',
+            'filter' => json_encode([
+                [
+                    'property' => 'search',
+                    'value' => $name,
+                    'operator' => null,
+                    'expression' => null
+                ],
+                [
+                    'property' => 'price',
+                    'value' => 'all',
+                    'operator' => null,
+                    'expression' => null
+                ]
+            ]),
+            'limit' => 5
+        ], false);
+
+        return Plugin::mapList($storeRequest->data);
     }
 
     /**

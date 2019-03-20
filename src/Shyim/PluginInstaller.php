@@ -43,7 +43,7 @@ class PluginInstaller
         });
 
         if (empty($license)) {
-            throw new \RuntimeException(sprintf('[Installer] Plugin with name "%s" is not available in your Account. Please buy the plugin first', $name));
+            $this->checkExistenceOfPlugin($name);
         }
 
         /** @var License $license */
@@ -152,5 +152,27 @@ class PluginInstaller
             default:
                 return getcwd() . '/custom/plugins/';
         }
+    }
+
+    private function checkExistenceOfPlugin(string $name)
+    {
+        $plugins = $this->client->searchPlugin($name);
+        $found = false;
+
+        foreach ($plugins as $plugin) {
+            if ($plugin->code === $name || $plugin->name === $name) {
+                $found = true;
+            }
+        }
+
+        if ($found || empty($plugins)) {
+            throw new \RuntimeException(sprintf('[Installer] Plugin with name "%s" is not available in your Account. Please buy the plugin first', $name));
+        }
+
+        $names = array_map(function(\Shyim\Struct\Plugin\Plugin $plugin) {
+            return $plugin->name;
+        }, $plugins);
+
+        throw new \RuntimeException(sprintf('[Installer] Could not find plugin by name "%s". Did you mean some of %s', $name, implode(', ', $names)));
     }
 }
