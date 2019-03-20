@@ -92,10 +92,29 @@ class PluginInstallTest extends TestCase
             ]
         ]);
 
-        PluginInstaller::installPlugins($event);
-
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Could not download plugin NetiStoreLocator in version 5.3.0 maybe not a valid licence for this version');
+
+        PluginInstaller::installPlugins($event);
+    }
+
+    public function testInstallWithConstraint()
+    {
+        $event = $this->getMockedEvent([
+            'plugins' => [
+                'production' => [
+                    'SwagLiveshopping' => '^3'
+                ]
+            ]
+        ]);
+
+        PluginInstaller::installPlugins($event);
+
+        $this->assertContains('Successfully loggedin in the account', $this->output->getOutput());
+        $this->assertContains($this->testHost, $this->output->getOutput());
+        $this->assertContains('SwagLiveShopping', $this->output->getOutput());
+        $this->assertContains('with version 3', $this->output->getOutput());
+        $this->assertFileExists('./custom/plugins/SwagLiveShopping');
     }
 
     /**

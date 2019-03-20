@@ -180,6 +180,8 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
 
         $versions = array_column($plugin['plugin']['binaries'], 'version');
 
+        $version = VersionSelector::getVersion($name, $version, $versions);
+
         if (!in_array($version, $versions)) {
             return self::throwException(sprintf('[Installer] Plugin with name "%s" doesnt have the version "%s", Available versions are %s', $name, $version, implode(', ', array_reverse($versions))));
         }

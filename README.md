@@ -82,9 +82,13 @@ Aaaaaaaand the Plugins should be installed
 
 ## FAQ
 
-# BinariesException-14
+### BinariesException-14
 
 Reasons can be:
 
 * You are not logged in
 * The `SHOP_URL` environment variable does not equal the from account 
+
+#### Versions
+
+Versions can be a constraint or a exact version
