@@ -30,6 +30,6 @@
         "process-timeout": 0
     },
     "extra": {
-        "class": "Shyim\\PluginInstaller"
+        "class": "Shyim\\ComposerPlugin"
     }
 }
