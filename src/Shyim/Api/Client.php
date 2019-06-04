@@ -157,7 +157,7 @@ class Client
         ComposerPlugin::$io->write(sprintf('[Installer] Found shop with domain "%s" in account', $this->shop->domain), true);
 
         $licenseParams = [
-            'shopId' => $this->shop->id,
+            'domain' => $this->shop->domain,
         ];
 
         if ($partnerAccount) {
