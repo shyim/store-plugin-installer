@@ -388,8 +388,8 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
             return self::throwException(sprintf('[Installer] Domain "%s" is wildcard. Wildcard domains are not supported', self::$shop['domain']));
         }
         $licenseParams = [
-                'shopId' => self::$shop['id'],
-            ];
+            'domain' => self::$shop['domain'],
+        ];
 
         if ($partnerAccount) {
             $licenseParams['partnerId'] = $response['userId'];
