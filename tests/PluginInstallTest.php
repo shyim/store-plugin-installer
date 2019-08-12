@@ -103,7 +103,7 @@ class PluginInstallTest extends TestCase
         $event = $this->getMockedEvent([
             'plugins' => [
                 'production' => [
-                    'SwagLiveshopping' => '^3',
+                    'SwagLiveshopping' => '^4',
                 ],
             ],
         ]);
