@@ -113,7 +113,7 @@ class PluginInstallTest extends TestCase
         $this->assertContains('Successfully loggedin in the account', $this->output->getOutput());
         $this->assertContains($this->testHost, $this->output->getOutput());
         $this->assertContains('SwagLiveShopping', $this->output->getOutput());
-        $this->assertContains('with version 3', $this->output->getOutput());
+        $this->assertContains('with version 4', $this->output->getOutput());
         $this->assertFileExists('./custom/plugins/SwagLiveShopping');
     }
 
