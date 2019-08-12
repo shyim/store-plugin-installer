@@ -391,7 +391,7 @@ class PluginInstaller implements PluginInterface, EventSubscriberInterface
             'domain' => self::$shop['domain'],
         ];
 
-        if ($partnerAccount) {
+        if (!empty($partnerAccount['partnerId'])) {
             $licenseParams['partnerId'] = $response['userId'];
         }
 
