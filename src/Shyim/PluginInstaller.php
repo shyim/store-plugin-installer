@@ -76,7 +76,7 @@ class PluginInstaller
 
         ComposerPlugin::$io->write(sprintf('[Installer] Downloading plugin "%s" with version %s', $name, $version), true);
 
-        $this->movePlugin($this->client->downloadPlugin($binaryVersion), $name, $version);
+        $this->movePlugin($this->client->downloadPlugin($binaryVersion, $name, $version), $name, $version);
     }
 
     /**
@@ -88,14 +88,6 @@ class PluginInstaller
      */
     private function movePlugin($content, $name, $version)
     {
-        if (is_array($content)) {
-            if (array_key_exists('success', $content)) {
-                if (!$content['success']) {
-                    throw new \InvalidArgumentException(sprintf('Could not download plugin %s in version %s maybe not a valid licence for this version', $name, $version));
-                }
-            }
-        }
-
         $file = LocalCache::getCachePath($name, $version);
 
         file_put_contents($file, $content);

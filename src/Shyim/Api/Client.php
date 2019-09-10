@@ -64,9 +64,18 @@ class Client
         return $this->licenses;
     }
 
-    public function downloadPlugin(Binaries $binaryVersion)
+    public function downloadPlugin(Binaries $binaryVersion, string $name, string $version)
     {
-        return self::makePluginHTTPRequest(self::BASE_URL . $binaryVersion->filePath . '?token=' . $this->token . '&shopId=' . $this->shop->id);
+        $json = $this->apiRequest($binaryVersion->filePath, 'GET', [
+            'json' => true,
+            'shopId' => $this->shop->id
+        ]);
+
+        if (!array_key_exists('url', $json)) {
+            throw new \InvalidArgumentException(sprintf('Could not download plugin %s in version %s maybe not a valid licence for this version', $name, $version));
+        }
+
+        return self::makePluginHTTPRequest($json['url']);
     }
 
     /**
