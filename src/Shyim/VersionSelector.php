@@ -17,17 +17,22 @@ class VersionSelector
      */
     public static function getVersion($name, $version, array $availableVersions)
     {
-        $pool = new Pool();
+        try {
+            $pool = new Pool();
 
-        $packages = array_map(function ($version) use ($name) {
-            return new Package($name, $version, $version);
-        }, $availableVersions);
+            $packages = array_map(function ($version) use ($name) {
+                return new Package($name, $version, $version);
+            },
+                $availableVersions);
 
-        $pool->addRepository(new InstalledArrayRepository($packages));
-        $selector = new \Composer\Package\Version\VersionSelector($pool);
+            $pool->addRepository(new InstalledArrayRepository($packages));
+            $selector = new \Composer\Package\Version\VersionSelector($pool);
 
-        $constraintVersion = $selector->findBestCandidate($name, $version);
+            $constraintVersion = $selector->findBestCandidate($name, $version);
 
-        return $constraintVersion ? $constraintVersion->getVersion() : $version;
+            return $constraintVersion ? $constraintVersion->getVersion() : $version;
+        }catch(\Exception $e){
+            return $version;
+        }
     }
 }
