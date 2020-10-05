@@ -1,5 +1,10 @@
 # Install plugins from Store during composer install
 
+
+## Deprecated:
+
+Use native composer repository https://packages.friendsofshopware.com/ instead
+
 ## What do you need?
 
 * Shopware Composer Installation
